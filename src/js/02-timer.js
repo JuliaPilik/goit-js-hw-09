@@ -2,49 +2,72 @@ import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 
 const inputDateRef = document.querySelector('#datetime-picker');
+const btnStartRef = document.querySelector('button[data-start]');
 const daysRef = document.querySelector('span[data-days]');
 const hoursRef = document.querySelector('span[data-hours]');
 const minsRef = document.querySelector('span[data-minutes]');
 const secsRef = document.querySelector('span[data-seconds]');
-const nowDate = new Date();
+btnStartRef.disabled = true;
+let timerId = null;
+
 
 const options = {
   enableTime: true,
   time_24hr: true,
   defaultDate: new Date(),
-    minuteIncrement: 1,
+  minuteIncrement: 1,
   dateFormat: "Y-m-d H:i",
   onClose(selectedDates) {
-    checkDate(selectedDates[0]);
-      console.log(selectedDates[0]);
-     // inputDateRef.value = selectedDates[0];
+
+    if (checkDate(selectedDates[0])) {
+
+      btnStartRef.disabled = false;
+
+      btnStartRef.addEventListener("click", () => {
+
+        const startTime = selectedDates[0].getTime();
+        btnStartRef.disabled = true;
+        inputDateRef.disabled = true;
+
+        timerId = setInterval(() => {
+          
+          const currentTime = Date.now();
+          if  ((startTime - currentTime) > 0) {
+            UpdateClockFace(convertMs(startTime - currentTime));
+          } else {
+            clearInterval(timerId);
+          }
+        }, 1000);
+       
+      });
+    } else {
+      btnStartRef.disabled = true;
+  }
+      
   },
 };
-const timer = {
-    start() {
-        const startTime = new Date("2022-12-16 17:57");
-    
-        setInterval(() => {
-            const currentTime = Date.now();
-            console.log(UpdateClockFace(convertMs(startTime - currentTime)));
-        }, 1000);
-    },
-}
-timer.start();
+
 flatpickr("#datetime-picker", options);
 
 function checkDate(dt) {
-  if (Date.parse(dt) - nowDate < 0) {
-    alert("sdfdg");
-    return;
+  const nowDate = new Date();
+  const dtInMs = dt.getTime();
+  if ((dtInMs - nowDate.getTime()) < 0) {
+    alert("Please choose a date in the future");
+    return false;
   }
+  return true;
 }
 
 function UpdateClockFace({days,hours, minutes, seconds}) {
-    daysRef.textContent = `${days}`;
-    hoursRef.textContent = `${hours}`;
-    minsRef.textContent = `${minutes}`;
-    secsRef.textContent = `${seconds}`;
+    daysRef.textContent = `${pad(days)}`;
+    hoursRef.textContent = `${pad(hours)}`;
+    minsRef.textContent = `${pad(minutes)}`;
+    secsRef.textContent = `${pad(seconds)}`;
+}
+
+function pad(value) {
+  return String(value).padStart(2, '0');
 }
 
 function convertMs(ms) {
